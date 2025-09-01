@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="./src/output.css" rel="stylesheet">
+    <link rel="shortcut icon" href="./logo-removebg-preview.png" type="image/x-icon">
+    <title>gO2 BaNK</title>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="p-8 w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <img src="./logo-removebg-preview.png" alt="GO2 BANK" class="mx-auto h-10 w-auto">
+        </div>
+
+        <!-- Welcome Message -->
+        <h1 class="text-2xl font-semibold text-gray-800 text-center mb-8">Welcome back!</h1>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="space-y-6">
+            <!-- Email Field -->
+            <div>
+                <input type="text" id="email" placeholder="Email address"
+                    class="w-full px-4 py-3 border-2 border-red-300 rounded-lg focus:outline-none focus:border-red-500 text-gray-700 placeholder-gray-400">
+                <p class="text-red-500 text-sm mt-1">Please enter a valid Email address</p>
+            </div>
+
+            <!-- Password Field -->
+            <div class="relative">
+                <input type="password" id="password" placeholder="Password"
+                    class="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400 pr-12">
+                <button type="button" id="togglePassword"
+                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                    <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center">
+                <input type="checkbox" id="remember"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="remember" class="ml-2 text-gray-600">Remember me</label>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" id="loginButton" disabled
+                class="w-full bg-gradient-to-r from-blue-400 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-blue-500 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-400 disabled:hover:to-purple-500">
+                Log in
+            </button>
+        </form>
+
+        <!-- Footer Links -->
+        <div class="text-center mt-6 space-y-2">
+            <a href="#" class="block text-blue-500 hover:text-blue-600 text-sm">Trouble logging in?</a>
+            <a href="#" class="block text-blue-500 hover:text-blue-600 text-sm">Activate your card</a>
+            <a href="#" class="block text-blue-500 hover:text-blue-600 text-sm mt-6">Privacy Information | Help</a>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage"
+            class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm text-center">
+            Invalid username or password. Please try again.
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage"
+            class="hidden mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm text-center">
+            Login successful! Redirecting to dashboard...
+        </div>
+    </div>
+
+    <script>
+        // Authentication functions
+        function setAuthToken(user) {
+            const authData = {
+                isAuthenticated: true,
+                user: user,
+                loginTime: new Date().getTime(),
+                expiresIn: 24 * 60 * 60 * 1000 // 24 hours
+            };
+            localStorage.setItem('go2bank_auth', JSON.stringify(authData));
+        }
+
+        function clearAuthToken() {
+            localStorage.removeItem('go2bank_auth');
+        }
+
+        function isAuthenticated() {
+            const authData = localStorage.getItem('go2bank_auth');
+            if (!authData) return false;
+
+            try {
+                const parsed = JSON.parse(authData);
+                const now = new Date().getTime();
+
+                // Check if token has expired
+                if (now - parsed.loginTime > parsed.expiresIn) {
+                    clearAuthToken();
+                    return false;
+                }
+
+                return parsed.isAuthenticated;
+            } catch (e) {
+                clearAuthToken();
+                return false;
+            }
+        }
+
+        // Check if user is already logged in
+        if (isAuthenticated()) {
+            window.location.href = './src/dashboard.html';
+        }
+
+        // Function to check if form is valid and enable/disable login button
+        function checkFormValidity() {
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const loginButton = document.getElementById('loginButton');
+
+            if (email !== '' && password !== '') {
+                loginButton.disabled = false;
+            } else {
+                loginButton.disabled = true;
+            }
+        }
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+
+            if (type === 'text') {
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                `;
+            } else {
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                `;
+            }
+        });
+
+        // Handle form submission
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        // Add event listeners to check form validity on input
+        emailInput.addEventListener('input', function () {
+            if (this.value.trim() !== '') {
+                this.classList.remove('border-red-300', 'focus:border-red-500');
+                this.classList.add('border-blue-200', 'focus:border-blue-500');
+                this.nextElementSibling.style.display = 'none';
+            } else {
+                this.classList.remove('border-blue-200', 'focus:border-blue-500');
+                this.classList.add('border-red-300', 'focus:border-red-500');
+                this.nextElementSibling.style.display = 'block';
+            }
+            checkFormValidity();
+        });
+
+        passwordInput.addEventListener('input', checkFormValidity);
+
+        // Initial check on page load
+        checkFormValidity();
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Hide previous messages
+            errorMessage.classList.add('hidden');
+            successMessage.classList.add('hidden');
+
+            // Check credentials
+            if (email === 'Ashley2011' && password === 'Andrea1993') {
+                // Set authentication token
+                setAuthToken({
+                    username: email,
+                    name: 'Ashley Andrea'
+                });
+
+                successMessage.classList.remove('hidden');
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = './src/dashboard.html';
+                }, 1500);
+            } else {
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>
