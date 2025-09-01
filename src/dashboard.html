@@ -1,0 +1,379 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="./output.css" rel="stylesheet">
+    <link rel="shortcut icon" href="./logo-removebg-preview.png" type="image/x-icon">
+    <title>Dashboard</title>
+</head>
+
+<body class="min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Verifying authentication...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent" class="hidden">
+        <!-- Responsive Container -->
+        <div class="w-full mx-auto bg-white min-h-screen">
+            <!-- Status Bar -->
+            <div class="bg-white px-4 py-4 flex justify-between items-center text-sm">
+                <div>
+                    <button onclick="goBack()" class="cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+                <div>
+                    <img src="../logo.png" alt="GO2 BANK logo" class="w-auto h-7">
+                </div>
+                <div class="relative">
+                    <button onclick="toggleUserMenu()" class="cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                    <!-- User Menu Dropdown -->
+                    <div id="userMenu"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                        <div class="py-1">
+                            <button onclick="logout()"
+                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header -->
+            <div class="bg-white px-4 py-3 flex justify-between items-center border-b">
+                <div>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800" id="userName">Ashley Andrea
+                    </h1>
+                </div>
+                <div class="flex space-x-3">
+                    <button class="text-gray-600">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bank Card and Balance -->
+            <div class="px-4 py-6">
+                <div class="flex items-center space-x-4 sm:space-x-6 md:space-x-12">
+                    <!-- Bank Card -->
+                    <div class="rounded-lg p-4 w-32 h-20 flex flex-col justify-between">
+                        <img src="../debit card.png" alt="debit card">
+                    </div>
+                    <!-- Balance -->
+                    <div class="flex-1">
+                        <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800" id="balance">
+                            $320,000</div>
+                        <div class="text-sm sm:text-base text-gray-500">Available balance</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div class="px-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">Transactions</h2>
+                    <button class="text-gray-600">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Transaction List Container -->
+                <div id="transactionsList" class="space-y-3 pb-6">
+                    <!-- Transactions will be dynamically generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication functions
+        function isAuthenticated() {
+            const authData = localStorage.getItem('go2bank_auth');
+            if (!authData) return false;
+
+            try {
+                const parsed = JSON.parse(authData);
+                const now = new Date().getTime();
+
+                // Check if token has expired
+                if (now - parsed.loginTime > parsed.expiresIn) {
+                    localStorage.removeItem('go2bank_auth');
+                    return false;
+                }
+
+                return parsed.isAuthenticated;
+            } catch (e) {
+                localStorage.removeItem('go2bank_auth');
+                return false;
+            }
+        }
+
+        function getAuthUser() {
+            const authData = localStorage.getItem('go2bank_auth');
+            if (!authData) return null;
+
+            try {
+                const parsed = JSON.parse(authData);
+                return parsed.user;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('go2bank_auth');
+            localStorage.removeItem('selectedTransaction');
+            window.location.href = '../index.html';
+        }
+
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function (event) {
+            const menu = document.getElementById('userMenu');
+            const button = event.target.closest('button');
+
+            if (!button || button.getAttribute('onclick') !== 'toggleUserMenu()') {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Route protection
+        function checkAuth() {
+            if (!isAuthenticated()) {
+                // Redirect to login page if not authenticated
+                window.location.href = '../index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Initialize page
+        function initializePage() {
+            // Show loading screen
+            document.getElementById('loadingScreen').style.display = 'flex';
+            document.getElementById('mainContent').classList.add('hidden');
+
+            // Check authentication
+            setTimeout(() => {
+                if (checkAuth()) {
+                    // Load user data
+                    const user = getAuthUser();
+                    if (user && user.name) {
+                        document.getElementById('userName').textContent = user.name;
+                    }
+
+                    // Hide loading screen and show content
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('mainContent').classList.remove('hidden');
+
+                    // Render transactions
+                    renderTransactions();
+                }
+            }, 1000); // Simulate loading time
+        }
+
+        // Transaction data array
+        const transactions = [
+            {
+                id: 1,
+                name: " Lackland Retirement Funds ",
+                type: "Deposit",
+                date: "August 30, 2025",
+                amount: 175000.00,
+                isPositive: true,
+                icon: "shopping",
+                hasChevron: true
+            },
+            {
+                id: 2,
+                name: "MDOL-EDI PYMNTS",
+                type: "Deposit",
+                date: "July 30, 2025",
+                amount: 9525.00,
+                isPositive: true,
+                icon: "shopping",
+                hasChevron: true
+            },
+            {
+                id: 3,
+                name: "MDOL-EDI PYMNTS",
+                type: "Deposit",
+                date: "July 25, 2025",
+                amount: 2430.00,
+                isPositive: true,
+                icon: "shopping",
+                hasChevron: true
+            },
+            {
+                id: 4,
+                name: "COMPANY REFUND",
+                type: "Refund",
+                date: "June 31, 2025",
+                amount: 7.00,
+                isPositive: true,
+                icon: "shopping",
+                hasChevron: true
+            },
+            {
+                id: 5,
+                name: "Monthly fee",
+                type: "Fee",
+                date: "June 25, 2025",
+                amount: 5.00,
+                isPositive: false,
+                icon: "payment",
+                hasChevron: true
+            },
+            {
+                id: 6,
+                name: "BCU-VERIFY",
+                type: "Verification",
+                date: "March 30, 2025",
+                amount: 0.17,
+                isPositive: true,
+                icon: "verification",
+                hasChevron: true
+            },
+            {
+                id: 7,
+                name: "BCU-VERIFY",
+                type: "Verification",
+                date: "March 30, 2025",
+                amount: 0.01,
+                isPositive: true,
+                icon: "verification",
+                hasChevron: true
+            },
+            {
+                id: 8,
+                name: "CASH APP/CASEY CARL",
+                type: "Purchase",
+                date: "March 9, 2025",
+                amount: 9.99,
+                isPositive: false,
+                icon: "payment",
+                hasChevron: true
+            },
+            {
+                id: 9,
+                name: "CASH APP/CASEY CARL",
+                type: "Purchase",
+                date: "March 9, 2025",
+                amount: 4.99,
+                isPositive: false,
+                icon: "payment",
+                hasChevron: true
+            }
+        ];
+
+        // Function to get appropriate icon SVG
+        function getIconSVG(iconType) {
+            const icons = {
+                shopping: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"></path>`,
+                payment: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>`,
+                verification: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>`
+            };
+            return icons[iconType] || icons.payment;
+        }
+
+        // Function to format amount
+        function formatAmount(amount, isPositive) {
+            const sign = isPositive ? '+' : '-';
+            const color = isPositive ? 'text-green-600' : 'text-red-600';
+            return `<span class="${color} font-semibold">${sign}$${amount.toFixed(2)}</span>`;
+        }
+
+        // Function to handle transaction click
+        function handleTransactionClick(transactionId) {
+            // Check if user is still authenticated before navigating
+            if (!isAuthenticated()) {
+                logout();
+                return;
+            }
+
+            // Store transaction data in localStorage for the detail page
+            const transaction = transactions.find(t => t.id === transactionId);
+            localStorage.setItem('selectedTransaction', JSON.stringify(transaction));
+
+            // Route to transaction detail page
+            window.location.href = 'transaction-detail.html';
+        }
+
+        // Function to render transactions
+        function renderTransactions() {
+            const container = document.getElementById('transactionsList');
+
+            const transactionHTML = transactions.map(transaction => `
+                <div class="flex items-center justify-between py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-lg px-2"
+                     onclick="handleTransactionClick(${transaction.id})">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded flex items-center justify-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${getIconSVG(transaction.icon)}
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-800 text-sm sm:text-base">${transaction.name}</div>
+                            <div class="text-sm text-gray-500">${transaction.type}</div>
+                            <div class="text-xs text-gray-400">${transaction.date}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${formatAmount(transaction.amount, transaction.isPositive)}
+                        ${transaction.hasChevron ? `
+                            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = transactionHTML;
+        }
+
+        // Navigation functions
+        function goBack() {
+            logout(); // Go back to login for security
+        }
+
+        function closeApp() {
+            logout(); // Close app and logout for security
+        }
+
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            initializePage();
+        });
+    </script>
+</body>
+
+</html>
